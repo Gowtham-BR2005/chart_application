@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Auth from './components/Auth';       // ← new
 import Sidebar from './components/Sidebar';
 import ChatWindow from './components/ChatWindow';
 import './App.css';
@@ -6,10 +7,10 @@ import './App.css';
 const initialContacts = [
   {
     id: 1,
-    name: 'Ganesh ah',
-    avatar: 'GA',
+    name: 'ganesh',
+    avatar: 'PS',
     avatarColor: '#00a884',
-    lastMessage: 'is project completed?',
+    lastMessage: 'Are you coming to the meeting tomorrow?',
     time: '10:30 AM',
     unread: 2,
     online: true,
@@ -21,8 +22,8 @@ const initialContacts = [
   },
   {
     id: 2,
-    name: 'Arun',
-    avatar: 'AR',
+    name: 'kain',
+    avatar: 'AM',
     avatarColor: '#5b5ea6',
     lastMessage: 'Sent a photo',
     time: '9:15 AM',
@@ -52,8 +53,8 @@ const initialContacts = [
   },
   {
     id: 4,
-    name: 'kain Aanto',
-    avatar: 'KA',
+    name: 'Arun the slop',
+    avatar: 'SI',
     avatarColor: '#ff9800',
     lastMessage: 'Thanks a lot! 😊',
     time: 'Yesterday',
@@ -68,7 +69,7 @@ const initialContacts = [
   {
     id: 5,
     name: 'Danush',
-    avatar: 'D',
+    avatar: 'KB',
     avatarColor: '#009688',
     lastMessage: 'See you at 7!',
     time: 'Mon',
@@ -83,9 +84,15 @@ const initialContacts = [
 ];
 
 function App() {
+  const [authenticated, setAuthenticated] = useState(false);   // ← auth gate
   const [contacts, setContacts] = useState(initialContacts);
   const [selectedContact, setSelectedContact] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Show auth pages until the user authenticates
+  if (!authenticated) {
+    return <Auth onAuthenticated={() => setAuthenticated(true)} />;
+  }
 
   const handleSelectContact = (contact) => {
     setSelectedContact(contact);
