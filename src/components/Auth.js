@@ -356,6 +356,7 @@ export default function Auth({ onAuthenticated }) {
   const [screen, setScreen] = useState('login');
   const [pendingPhone, setPendingPhone] = useState('');
   const [signupData, setSignupData] = useState(null);
+  console.log(signupData);
 
   const handleLogin = ({ type, phone }) => {
     if (type === 'phone') { setPendingPhone(phone); setScreen('otp'); }
