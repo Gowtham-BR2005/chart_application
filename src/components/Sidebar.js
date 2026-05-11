@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import UserProfile from './UserProfile';
 import './Sidebar.css';
 
 const icons = {
@@ -24,8 +25,9 @@ const icons = {
   ),
 };
 
-export default function Sidebar({ contacts, selectedContact, onSelectContact, searchQuery, onSearch, currentUser }) {
+export default function Sidebar({ contacts, selectedContact, onSelectContact, searchQuery, onSearch, currentUser, onUpdateProfile }) {
   const [searching, setSearching] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   // Debug: Log when contacts prop updates
   React.useEffect(() => {
@@ -36,7 +38,7 @@ export default function Sidebar({ contacts, selectedContact, onSelectContact, se
     <div className="sidebar">
       {/* Header */}
       <div className="sidebar-header">
-       <div className="my-avatar">
+       <div className="my-avatar" onClick={() => setShowProfile(true)} style={{ cursor: 'pointer' }} title="My Profile">
         <span>{currentUser?.username?.slice(0,2).toUpperCase() || 'Me'}</span>
       </div>
         <div className="header-actions">
@@ -44,6 +46,15 @@ export default function Sidebar({ contacts, selectedContact, onSelectContact, se
           <button className="icon-btn" title="Menu">{icons.menu}</button>
         </div>
       </div>
+
+      {/* User Profile Modal */}
+      {showProfile && (
+        <UserProfile
+          user={currentUser}
+          onClose={() => setShowProfile(false)}
+          onUpdateProfile={onUpdateProfile}
+        />
+      )}
 
       {/* Search */}
       <div className="search-bar">

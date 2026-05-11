@@ -12,3 +12,4 @@ require("./broadcastPresence");
 require("./getOnlineUsers");
 require("./checkInactiveUsers");
 require("./heartbeat");
+require("./updateUsername");

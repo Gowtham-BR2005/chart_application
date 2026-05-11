@@ -56,6 +56,7 @@ function App() {
   const [backendError, setBackendError] = useState(!ENABLE_BACKEND);
   const [registering, setRegistering] = useState(false);
   const [registrationComplete, setRegistrationComplete] = useState(false);
+  const [userProfile, setUserProfile] = useState(null); // Full user profile from DB
 
   // Send offline status when user closes browser/tab
   useEffect(() => {
@@ -89,12 +90,13 @@ function App() {
     };
   }, [auth]);
 
-  // Periodically check for inactive users (every 30 seconds)
+  // Periodically check for inactive users AND refresh online status (every 30 seconds)
   useEffect(() => {
     if (!auth || !ENABLE_BACKEND || !registrationComplete) return;
 
-    const checkInactive = async () => {
+    const checkInactiveAndRefreshOnline = async () => {
       try {
+        // Check for inactive users
         const res = await fetch(`${API_BASE}/presence/check-inactive`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${auth.token}` }
@@ -106,16 +108,36 @@ function App() {
             console.log(`🔴 Marked ${data.marked} inactive users as offline`);
           }
         }
+
+        // Refresh online users list
+        const onlineUsersList = await getOnlineUsers(auth.token);
+        if (onlineUsersList) {
+          setContacts(prevContacts => {
+            return prevContacts.map(c => {
+              const wasOnline = c.online;
+              const isOnline = onlineUsersList.some(u => u.userId === c.userId);
+
+              if (wasOnline !== isOnline) {
+                console.log(`🔄 Status changed: ${c.name} is now ${isOnline ? 'ONLINE' : 'OFFLINE'}`);
+              }
+
+              return {
+                ...c,
+                online: isOnline,
+              };
+            });
+          });
+        }
       } catch (error) {
         // Silent fail - not critical
       }
     };
 
     // Check immediately
-    checkInactive();
+    checkInactiveAndRefreshOnline();
 
     // Then check every 30 seconds
-    const interval = setInterval(checkInactive, 30000);
+    const interval = setInterval(checkInactiveAndRefreshOnline, 30000);
 
     return () => clearInterval(interval);
   }, [auth, registrationComplete]);
@@ -134,6 +156,7 @@ function App() {
 
         if (existingUser) {
           console.log('✅ User already registered:', existingUser);
+          setUserProfile(existingUser); // Store full profile
           setRegistrationComplete(true);
           setBackendError(false);
         } else {
@@ -152,6 +175,7 @@ function App() {
 
           if (registeredUser) {
             console.log('✅ User registered successfully:', registeredUser);
+            setUserProfile(registeredUser); // Store full profile
             setRegistrationComplete(true);
             setBackendError(false);
           } else {
@@ -201,29 +225,39 @@ function App() {
             };
           });
 
-          setContacts(formattedContacts);
+          // DON'T set contacts yet - wait for online status sync first
 
-          // Sync online status after loading contacts
+          // Immediately sync online status before setting contacts
           try {
+            console.log('🔄 Syncing online status from database...');
             const onlineUsersList = await getOnlineUsers(auth.token);
-            if (onlineUsersList && onlineUsersList.length > 0) {
-              console.log(`🟢 ${onlineUsersList.length} users currently online`);
 
-              setContacts(prevContacts => {
-                return prevContacts.map(c => {
-                  const isOnline = onlineUsersList.some(u => u.userId === c.userId);
-                  if (isOnline && !c.online) {
-                    console.log(`✅ Synced: ${c.name} is ONLINE`);
-                  }
-                  return {
-                    ...c,
-                    online: isOnline,
-                  };
-                });
+            if (onlineUsersList && onlineUsersList.length > 0) {
+              console.log(`🟢 ${onlineUsersList.length} users currently online:`, onlineUsersList.map(u => u.username || u.userId));
+
+              // Update formatted contacts with current online status
+              const contactsWithOnlineStatus = formattedContacts.map(c => {
+                const isOnline = onlineUsersList.some(u => u.userId === c.userId);
+                if (isOnline) {
+                  console.log(`✅ ${c.name} is ONLINE`);
+                }
+                return {
+                  ...c,
+                  online: isOnline,
+                };
               });
+
+              // Set contacts with correct online status
+              setContacts(contactsWithOnlineStatus);
+              console.log('📋 Contacts set with online status');
+            } else {
+              console.log('ℹ️ No users currently online');
+              setContacts(formattedContacts);
             }
           } catch (error) {
-            console.error('Error syncing online status:', error);
+            console.error('❌ Error syncing online status:', error);
+            // Fallback: set contacts with DB status
+            setContacts(formattedContacts);
           }
         } else {
           console.log('ℹ️ No recent contacts found');
@@ -533,6 +567,50 @@ function App() {
     }
   };
 
+  const handleUpdateProfile = async (updates) => {
+    if (!ENABLE_BACKEND) return;
+
+    console.log('📝 Updating profile:', updates);
+
+    try {
+      const res = await fetch(`${API_BASE}/users/username`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${auth.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updates)
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to update profile');
+      }
+
+      const data = await res.json();
+      console.log('✅ Profile updated:', data.user);
+
+      // Update both auth and userProfile state with new username
+      setAuth(prev => ({
+        ...prev,
+        user: {
+          ...prev.user,
+          username: data.user.username
+        }
+      }));
+
+      setUserProfile(prev => ({
+        ...prev,
+        username: data.user.username
+      }));
+
+      return data.user;
+    } catch (error) {
+      console.error('❌ Error updating profile:', error);
+      throw error;
+    }
+  };
+
   // Show loading during registration
   if (registering) {
     return (
@@ -574,7 +652,8 @@ function App() {
           onSelectContact={handleSelectContact}
           searchQuery={searchQuery}
           onSearch={handleSearch}
-          currentUser={auth.user}
+          currentUser={userProfile || auth.user}
+          onUpdateProfile={handleUpdateProfile}
         />
         <ChatWindow
           contact={selectedContact}
