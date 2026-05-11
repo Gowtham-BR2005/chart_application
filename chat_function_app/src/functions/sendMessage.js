@@ -43,6 +43,41 @@ app.http("sendMessage", {
       await messagesContainer.items.create(message);
       context.log("Saved to CosmosDB OK");
 
+      // When user sends a message, mark all received messages from recipient as read
+      let markedCount = 0;
+      if (type === "direct") {
+        try {
+          const now = new Date().toISOString();
+
+          // Find all unread messages from the recipient (toUserId) to current user
+          const { resources: unreadMessages } = await messagesContainer.items.query({
+            query: `SELECT * FROM c WHERE c.partitionKey = @pk AND c.senderId = @senderId AND (IS_NULL(c.readAt) OR c.readAt = null)`,
+            parameters: [
+              { name: "@pk", value: partitionKey },
+              { name: "@senderId", value: toUserId }
+            ]
+          }).fetchAll();
+
+          context.log(`🔍 Found ${unreadMessages.length} unread messages from ${toUserId}`);
+
+          // Mark all as read
+          for (const msg of unreadMessages) {
+            msg.readAt = now;
+            msg.readBy = user.oid;
+            await messagesContainer.item(msg.id, partitionKey).replace(msg);
+          }
+
+          markedCount = unreadMessages.length;
+
+          if (markedCount > 0) {
+            context.log(`💙 Marked ${markedCount} messages as read (user replied)`);
+          }
+        } catch (readErr) {
+          context.log(`⚠️ Could not mark messages as read: ${readErr.message}`);
+          markedCount = 0;
+        }
+      }
+
       const pubSubClient = new WebPubSubServiceClient(
         process.env.PUBSUB_CONNECTION,
         process.env.PUBSUB_HUB
@@ -58,6 +93,25 @@ app.http("sendMessage", {
         const senderChannel = pubSubClient.group(`user_${user.oid}`);
         await senderChannel.sendToAll(JSON.stringify(message), { contentType: "application/json" });
         context.log("PubSub broadcast to sender:", `user_${user.oid}`);
+
+        // If we marked messages as read, send read receipt to the other person
+        context.log(`🔍 markedCount = ${markedCount}, toUserId = ${toUserId}`);
+        if (markedCount > 0) {
+          const readReceipt = {
+            type: 'read',
+            userId: user.oid,
+            readBy: user.oid,
+            timestamp: new Date().toISOString()
+          };
+          context.log(`💙 Sending read receipt to ${toUserId}:`, JSON.stringify(readReceipt));
+          await receiverChannel.sendToAll(
+            JSON.stringify(readReceipt),
+            { contentType: "application/json" }
+          );
+          context.log(`✅ Read receipt sent successfully to ${toUserId} (${markedCount} messages marked)`);
+        } else {
+          context.log(`ℹ️ No messages to mark as read (markedCount = 0)`);
+        }
       } else {
         // Group message - send to group channel
         const groupChannel = pubSubClient.group(`group_${groupId}`);

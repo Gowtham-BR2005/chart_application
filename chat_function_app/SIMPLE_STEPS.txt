@@ -1,0 +1,74 @@
+================================================================================
+                        SIMPLE 3-STEP DEPLOYMENT
+================================================================================
+
+STEP 1: Find Your Resource Group
+================================================================================
+
+Double-click: FIND_RESOURCE_GROUP.bat
+
+This shows your Function Apps and Resource Groups.
+
+Look for: mychat-functions-1778393386
+Write down the ResourceGroup name here: ___________________________
+
+
+STEP 2: Create Deployment Package
+================================================================================
+
+Open PowerShell in this folder and run:
+
+npm install
+Compress-Archive -Path . -DestinationPath deployment.zip -Force
+
+
+STEP 3: Deploy to Azure
+================================================================================
+
+Replace YOUR_RG_NAME with the name from Step 1:
+
+az functionapp deployment source config-zip --resource-group YOUR_RG_NAME --name mychat-functions-1778393386 --src deployment.zip --timeout 600
+
+Example (if your RG is "rg-mychat"):
+az functionapp deployment source config-zip --resource-group rg-mychat --name mychat-functions-1778393386 --src deployment.zip --timeout 600
+
+
+================================================================================
+                        OR USE AUTO-FINDER
+================================================================================
+
+Just double-click: DEPLOY_FIXED.bat
+
+This automatically finds your resource group and deploys!
+
+
+================================================================================
+                        AFTER DEPLOYMENT
+================================================================================
+
+Your backend will be live at:
+https://mychat-functions-1778393386.azurewebsites.net/api
+
+Blue ticks will work!
+Refresh your frontend app to see changes.
+
+
+================================================================================
+                        TROUBLESHOOTING
+================================================================================
+
+Problem: "Resource group not found"
+Solution: Make sure you're using the EXACT resource group name from Step 1
+
+Problem: "Function app not found"
+Solution: Check if mychat-functions-1778393386 is the correct name
+
+Problem: Window closes too fast
+Solution: Run commands in PowerShell or CMD that YOU open manually
+
+
+================================================================================
+
+            START WITH: FIND_RESOURCE_GROUP.bat
+
+================================================================================

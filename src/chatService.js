@@ -115,7 +115,20 @@ export async function getMessages(token, { type, targetId }) {
   }
 }
 
-export async function connectWebSocket(token, onMessage, autoReconnect = false) {
+export async function connectWebSocket(token, onMessage) {
+  // Close existing socket if any
+  if (socket) {
+    console.log('🔌 Closing existing WebSocket connection');
+    socket.close();
+    socket = null;
+  }
+
+  // Clear existing heartbeat
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
+
   try {
     const res = await fetch(`${API_BASE}/negotiate`, {
       headers: { Authorization: `Bearer ${token}` }
@@ -148,14 +161,13 @@ export async function connectWebSocket(token, onMessage, autoReconnect = false) 
       }
 
       // Send heartbeat every 15 seconds to keep connection alive
-      // This proves the user is still active (tab open)
       heartbeatInterval = setInterval(async () => {
         if (socket && socket.readyState === WebSocket.OPEN) {
-          // Send WebSocket heartbeat
-          socket.send(JSON.stringify({ type: 'heartbeat' }));
-
-          // Also update lastSeen in backend
+          // Send WebSocket ping frame (not a message)
           try {
+            socket.send(JSON.stringify({ type: 'ping' }));
+
+            // Update lastSeen in backend
             await fetch(`${API_BASE}/presence/heartbeat`, {
               method: 'POST',
               headers: {
@@ -163,13 +175,9 @@ export async function connectWebSocket(token, onMessage, autoReconnect = false) 
                 'Content-Type': 'application/json'
               }
             });
-            console.log('💓 Heartbeat sent - You are still ONLINE');
           } catch (error) {
-            console.log('💓 WebSocket heartbeat sent');
+            // Silent fail
           }
-        } else {
-          console.log('⚠️ WebSocket not open, stopping heartbeat');
-          clearInterval(heartbeatInterval);
         }
       }, 15000);
     };
@@ -177,7 +185,6 @@ export async function connectWebSocket(token, onMessage, autoReconnect = false) 
     socket.onmessage = (event) => {
       try {
         const envelope = JSON.parse(event.data);
-        console.log('📬 WebSocket envelope received:', envelope);
 
         // Azure Web PubSub wraps messages in an envelope
         if (envelope.type === 'message' && envelope.data) {
@@ -186,26 +193,15 @@ export async function connectWebSocket(token, onMessage, autoReconnect = false) 
             ? JSON.parse(envelope.data)
             : envelope.data;
 
-          console.log('📨 Message data:', messageData);
           onMessage(messageData);
-        } else if (envelope.type === 'system') {
-          console.log('🔔 System message:', envelope.event);
-
-          // Handle connected/disconnected events
-          if (envelope.event === 'connected') {
-            console.log('✅ You are now online');
-          } else if (envelope.event === 'disconnected') {
-            console.log('📴 You are now offline');
-          }
         }
       } catch (error) {
         console.error('WebSocket message parse error:', error);
-        console.error('Raw event data:', event.data);
       }
     };
 
     socket.onerror = (error) => {
-      console.error('WebSocket error:', error);
+      console.error('❌ WebSocket error:', error);
     };
 
     socket.onclose = async () => {
@@ -225,27 +221,17 @@ export async function connectWebSocket(token, onMessage, autoReconnect = false) 
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ online: false })
+          body: JSON.stringify({ online: false }),
+          keepalive: true
         });
         console.log('📢 Broadcasted: You are OFFLINE');
       } catch (error) {
-        console.error('Failed to broadcast offline status:', error);
-      }
-
-      // Only auto-reconnect if explicitly enabled
-      if (autoReconnect) {
-        console.log('WebSocket closed — reconnecting in 5s...');
-        setTimeout(() => {
-          connectWebSocket(token, onMessage, autoReconnect).catch(err => {
-            console.error('WebSocket reconnect failed:', err);
-          });
-        }, 5000);
+        // Silent fail
       }
     };
 
     return socket;
   } catch (error) {
-    // Silent failure - just return null without logging
     console.log('Backend not available - continuing in demo mode');
     return null;
   }

@@ -1,0 +1,85 @@
+================================================================================
+                   FIX FOR "Resource group not found"
+================================================================================
+
+The deployment script was using a wrong resource group name: "myResourceGroup"
+
+SOLUTION: Find your actual resource group name!
+
+================================================================================
+                        STEP 1: FIND YOUR RESOURCE GROUP
+================================================================================
+
+Double-click this file:
+   FIND_RESOURCE_GROUP.bat
+
+This will show you:
+   - All your Function Apps
+   - All your Resource Groups
+
+Look for: mychat-functions-1778393386
+Note the "ResourceGroup" column next to it!
+
+Example output:
+   Name                              ResourceGroup          DefaultHostName
+   --------------------------------- ---------------------- -----------------
+   mychat-functions-1778393386       rg-mychat-production   mychat-functions...
+
+In this example, your resource group is: rg-mychat-production
+
+================================================================================
+                        STEP 2: USE THE CORRECT NAME
+================================================================================
+
+Option A: Use DEPLOY_FIXED.bat (AUTOMATIC)
+   This script will auto-find your resource group!
+   Just double-click: DEPLOY_FIXED.bat
+
+Option B: Use Manual Command
+   Replace YOUR_RESOURCE_GROUP_HERE with your actual resource group:
+
+   az functionapp deployment source config-zip ^
+       --resource-group YOUR_RESOURCE_GROUP_HERE ^
+       --name mychat-functions-1778393386 ^
+       --src deployment.zip ^
+       --timeout 600
+
+================================================================================
+                        EXAMPLE
+================================================================================
+
+If your resource group is: rg-mychat-prod
+
+Run this command:
+   az functionapp deployment source config-zip ^
+       --resource-group rg-mychat-prod ^
+       --name mychat-functions-1778393386 ^
+       --src deployment.zip ^
+       --timeout 600
+
+================================================================================
+                        QUICK FIX
+================================================================================
+
+1. Double-click: FIND_RESOURCE_GROUP.bat
+2. Find your resource group name
+3. Double-click: DEPLOY_FIXED.bat (auto-finds it)
+   OR
+   Run manual command with correct resource group name
+
+================================================================================
+                        COMMON RESOURCE GROUP NAMES
+================================================================================
+
+Common patterns:
+   - rg-mychat-prod
+   - rg-mychat-production
+   - DefaultResourceGroup-XXX
+   - mychat-rg
+   - [your-app-name]-rg
+
+================================================================================
+
+                  NEXT: Run FIND_RESOURCE_GROUP.bat
+
+================================================================================

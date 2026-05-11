@@ -30,7 +30,24 @@
       "Bash(start cmd *)",
       "Bash(curl *)",
       "Bash(git rm *)",
-      "Bash(rm -rf /e/cc/chart_application/chat_function_app/.git)"
+      "Bash(rm -rf /e/cc/chart_application/chat_function_app/.git)",
+      "Bash(func start *)",
+      "Bash(pkill -f \"func start\")",
+      "Bash(awk '{print $5}')",
+      "Bash(xargs -I {} taskkill //F //PID {})",
+      "Bash(npm run *)",
+      "Bash(func azure *)",
+      "Bash(powershell -Command \"Compress-Archive -Path 'chat_function_app\\\\*' -DestinationPath 'chat_function_app_deploy.zip' -Force\")",
+      "Bash(az login *)",
+      "Bash(/c/Program Files/Microsoft/Azure Functions Core Tools/func azure *)",
+      "Bash(gh run *)",
+      "Bash(az functionapp cors show *)",
+      "Bash(az functionapp *)",
+      "Bash(git check-ignore *)",
+      "Bash(func --version)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -Command \"Compress-Archive -Path host.json,package.json,src -DestinationPath chat_function_app_deploy.zip -Force\")",
+      "Bash(az staticwebapp *)",
+      "Bash(git restore *)"
     ]
   }
 }

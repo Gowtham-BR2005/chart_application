@@ -58,6 +58,12 @@ function App() {
   const [registrationComplete, setRegistrationComplete] = useState(false);
   const [userProfile, setUserProfile] = useState(null); // Full user profile from DB
 
+  // Use ref to track selected contact for WebSocket handler (avoids stale closure)
+  const selectedContactRef = React.useRef(selectedContact);
+  React.useEffect(() => {
+    selectedContactRef.current = selectedContact;
+  }, [selectedContact]);
+
   // Send offline status when user closes browser/tab
   useEffect(() => {
     if (!auth || !ENABLE_BACKEND) return;
@@ -206,13 +212,14 @@ function App() {
     checkUserRegistration();
   }, [auth]);
 
-  // Step 2: After registration complete, load contacts and connect WebSocket
+  // Step 2: After registration complete, load contacts and connect WebSocket (ONCE)
   useEffect(() => {
     if (!auth || !ENABLE_BACKEND || !registrationComplete) {
       return;
     }
 
     let isMounted = true;
+    let socketInstance = null;
 
     const attemptConnection = async () => {
       // First, load recent contacts
@@ -278,12 +285,35 @@ function App() {
         console.error('Error loading contacts:', error);
       }
 
-      // Then connect WebSocket
+      // Then connect WebSocket (ONCE - do not reconnect on every render)
       console.log('🔌 Connecting to WebSocket...');
 
       try {
-        const socket = await connectWebSocket(auth.token, (incomingData) => {
+        socketInstance = await connectWebSocket(auth.token, (incomingData) => {
           if (!isMounted) return;
+
+          // Handle read receipts (blue tick notifications)
+          if (incomingData.type === 'read') {
+            console.log(`💙 Read receipt received!`);
+            console.log(`   From userId: ${incomingData.userId}`);
+            console.log(`   Read by: ${incomingData.readBy}`);
+
+            // Mark ALL sent messages as read (regardless of which chat is open)
+            // This is correct because the read receipt means "they read YOUR messages"
+            console.log('💙 Marking ALL sent messages as READ (blue ticks)');
+            setMessages(prevMessages => {
+              const updated = prevMessages.map(m => {
+                if (m.sent && m.status !== 'read') {
+                  console.log('  ✓✓ → 💙 Message turned blue:', m.text);
+                  return { ...m, status: 'read' }; // Turn blue!
+                }
+                return m;
+              });
+              return updated;
+            });
+
+            return; // Don't process as presence or message
+          }
 
           // Handle presence updates (online/offline status)
           if (incomingData.type === 'presence') {
@@ -302,18 +332,14 @@ function App() {
               const updated = prevContacts.map(c => {
                 if (c.userId === incomingData.userId) {
                   console.log(`✅ Updated ${c.name} to ${incomingData.online ? 'ONLINE' : 'OFFLINE'}`);
-                  console.log(`🔍 Before: c.online = ${c.online}, After: ${incomingData.online}`);
-                  const updatedContact = {
+                  return {
                     ...c,
                     online: incomingData.online,
                   };
-                  console.log(`🔍 Updated contact:`, updatedContact);
-                  return updatedContact;
                 }
                 return c;
               });
 
-              console.log(`📋 Full contacts list after update:`, updated.map(c => ({ name: c.name, online: c.online })));
               return updated;
             });
 
@@ -335,6 +361,12 @@ function App() {
           // Handle regular chat messages
           const incomingMsg = incomingData;
           console.log('📨 New message received:', incomingMsg);
+
+          // IMPORTANT: Ignore messages sent by yourself (to prevent echo)
+          if (incomingMsg.senderId === auth.user.userId) {
+            console.log('🚫 Ignoring own message (already shown optimistically)');
+            return;
+          }
 
           // First, check if sender is in contacts, if not add them
           setContacts(prevContacts => {
@@ -361,18 +393,19 @@ function App() {
               return [newContact, ...prevContacts];
             }
 
-            // Update existing contact (keep current online status from presence)
+            // Update existing contact (for received messages only)
             return prevContacts.map(c => {
               const isMatch = incomingMsg.senderId === c.userId ||
                              (incomingMsg.groupId && incomingMsg.groupId === c.id);
 
               if (isMatch) {
+                // Use ref to check if chat is currently open (not stale closure)
+                const isCurrentlyViewing = selectedContactRef.current?.userId === c.userId;
                 return {
                   ...c,
                   lastMessage: incomingMsg.content,
                   time: 'Just now',
-                  unread: selectedContact?.id === c.id ? 0 : (c.unread || 0) + 1,
-                  // Don't change online status here - it's managed by presence updates
+                  unread: isCurrentlyViewing ? 0 : (c.unread || 0) + 1,
                 };
               }
               return c;
@@ -380,36 +413,35 @@ function App() {
           });
 
           // Add incoming message to current chat if it matches
-          setSelectedContact(prev => {
-            if (!prev) return prev;
+          setMessages(prevMessages => {
+            // Use ref to get the CURRENT selected contact (not stale closure)
+            const currentSelected = selectedContactRef.current;
+            if (!currentSelected) return prevMessages;
 
             const isFromSelected =
-              incomingMsg.senderId === prev.userId ||
-              incomingMsg.groupId === prev.id;
+              incomingMsg.senderId === currentSelected.userId ||
+              incomingMsg.groupId === currentSelected.id;
 
             if (isFromSelected) {
-              setMessages(m => [...m, {
+              console.log('✅ Adding incoming message to current chat:', incomingMsg.content);
+
+              // Add the new incoming message
+              return [...prevMessages, {
                 id: incomingMsg.id,
                 text: incomingMsg.content,
                 sent: false,
                 time: new Date(incomingMsg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                sender: incomingMsg.senderName,
-              }]);
-
-              // Update name if needed, but keep online status from presence
-              return {
-                ...prev,
-                name: incomingMsg.senderName || prev.name,
-              };
+                sender: currentSelected.isGroup ? incomingMsg.senderName : undefined, // Only show sender in group chats
+              }];
             }
 
-            return prev;
+            return prevMessages;
           });
         });
 
         if (isMounted) {
-          if (socket) {
-            console.log('✅ WebSocket connected');
+          if (socketInstance) {
+            console.log('✅ WebSocket connected successfully');
             setBackendError(false);
           } else {
             console.warn('⚠️ WebSocket connection failed');
@@ -428,8 +460,12 @@ function App() {
 
     return () => {
       isMounted = false;
+      // Clean up WebSocket when component unmounts
+      if (socketInstance) {
+        socketInstance.close();
+      }
     };
-  }, [auth, registrationComplete, selectedContact]);
+  }, [auth, registrationComplete]); // Remove selectedContact from dependencies to prevent reconnecting
 
   // Initialize with demo contacts if backend is disabled
   useEffect(() => {
@@ -461,19 +497,67 @@ function App() {
         if (data && data.messages) {
           console.log(`✅ Loaded ${data.messages.length} messages`);
           console.log('🔍 Current user ID:', auth.user.userId);
-          console.log('🔍 First message senderId:', data.messages[0]?.senderId);
 
           setMessages(data.messages.map(m => {
             const isSent = m.senderId === auth.user.userId;
-            console.log(`📧 Message from ${m.senderId} - isSent: ${isSent} (current: ${auth.user.userId})`);
+            console.log(`📧 Message from ${m.senderId} - isSent: ${isSent} (current user: ${auth.user.userId})`);
+
+            // Determine message status for sent messages
+            let status = 'sent';
+            if (isSent) {
+              // Use backend readAt field if available (from Cosmos DB)
+              if (m.readAt) {
+                status = 'read'; // Blue double tick - message was read (stored in DB)
+                console.log(`  💙 Message "${m.content.substring(0, 20)}..." - readAt: ${m.readAt} → BLUE TICKS`);
+              } else if (selectedContact.online) {
+                status = 'delivered'; // Double gray tick - recipient is online (delivered)
+                console.log(`  ✓✓ Message "${m.content.substring(0, 20)}..." - delivered (online)`);
+              } else {
+                status = 'sent'; // Single gray tick - recipient is offline
+                console.log(`  ✓ Message "${m.content.substring(0, 20)}..." - sent (offline)`);
+              }
+            }
+
             return {
               id: m.id,
               text: m.content,
               sent: isSent,
+              status: isSent ? status : undefined,
               time: new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              sender: m.senderName,
+              sender: selectedContact.isGroup ? m.senderName : undefined, // Only show sender name in group chats
             };
           }));
+
+          // If chat is open, mark unread as 0
+          setContacts(prev => prev.map(c =>
+            c.id === selectedContact.id ? { ...c, unread: 0 } : c
+          ));
+
+          // Mark all messages from this contact as read (call backend)
+          if (selectedContact.userId) {
+            try {
+              console.log(`📬 Marking messages from ${selectedContact.name} as read...`);
+              const response = await fetch(`${API_BASE}/messages/mark-read`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${auth.token}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  senderId: selectedContact.userId
+                })
+              });
+
+              if (response.ok) {
+                const result = await response.json();
+                console.log(`✅ Marked ${result.markedCount} messages as read in database`);
+              } else {
+                console.error('❌ Failed to mark as read:', response.status);
+              }
+            } catch (error) {
+              console.error('❌ Error marking as read:', error);
+            }
+          }
         } else {
           setMessages([]);
         }
@@ -497,10 +581,12 @@ function App() {
 
     console.log('📤 Sending message to:', selectedContact.name);
 
+    const tempId = `temp-${Date.now()}`;
     const newMsg = {
-      id: Date.now(),
+      id: tempId,
       text,
       sent: true,
+      status: 'sent', // Initial status: single tick (gray)
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
@@ -528,6 +614,13 @@ function App() {
           console.warn('⚠️ Message sent locally but backend sync failed');
         } else {
           console.log('✅ Message sent successfully');
+
+          // Update message status to delivered if recipient is online
+          if (selectedContact.online) {
+            setMessages(prev => prev.map(m =>
+              m.id === tempId ? { ...m, status: 'delivered', id: result.id || tempId } : m
+            ));
+          }
         }
       } catch (error) {
         console.error('Error sending message:', error);

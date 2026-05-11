@@ -37,8 +37,21 @@ const icons = {
       <path d="M12 7a2 2 0 1 0-.001-4.001A2 2 0 0 0 12 7zm0 2a2 2 0 1 0-.001 3.999A2 2 0 0 0 12 9zm0 6a2 2 0 1 0-.001 3.999A2 2 0 0 0 12 15z"/>
     </svg>
   ),
-  tick: (
+  // Single tick - message sent (gray)
+  singleTick: (
     <svg viewBox="0 0 16 15" width="16" height="15" fill="currentColor">
+      <path d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.879a.32.32 0 0 1-.484.033l-.358-.325a.319.319 0 0 0-.484.032l-.378.483a.418.418 0 0 0 .036.541l1.32 1.266c.143.14.361.125.484-.033l6.272-8.048a.366.366 0 0 0-.064-.512z"/>
+    </svg>
+  ),
+  // Double tick - message delivered (gray)
+  doubleTick: (
+    <svg viewBox="0 0 16 15" width="16" height="15" fill="currentColor">
+      <path d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.879a.32.32 0 0 1-.484.033l-.358-.325a.319.319 0 0 0-.484.032l-.378.483a.418.418 0 0 0 .036.541l1.32 1.266c.143.14.361.125.484-.033l6.272-8.048a.366.366 0 0 0-.064-.512zm-4.1 0l-.478-.372a.365.365 0 0 0-.51.063L4.566 9.879a.32.32 0 0 1-.484.033L2.926 8.290a.366.366 0 0 0-.515.006l-.423.433a.364.364 0 0 0 .006.514l2.074 2.009c.143.14.361.125.484-.033l6.272-8.048a.365.365 0 0 0-.063-.511z"/>
+    </svg>
+  ),
+  // Blue double tick - message read
+  blueDoubleTick: (
+    <svg viewBox="0 0 16 15" width="16" height="15" fill="#53bdeb">
       <path d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.879a.32.32 0 0 1-.484.033l-.358-.325a.319.319 0 0 0-.484.032l-.378.483a.418.418 0 0 0 .036.541l1.32 1.266c.143.14.361.125.484-.033l6.272-8.048a.366.366 0 0 0-.064-.512zm-4.1 0l-.478-.372a.365.365 0 0 0-.51.063L4.566 9.879a.32.32 0 0 1-.484.033L2.926 8.290a.366.366 0 0 0-.515.006l-.423.433a.364.364 0 0 0 .006.514l2.074 2.009c.143.14.361.125.484-.033l6.272-8.048a.365.365 0 0 0-.063-.511z"/>
     </svg>
   ),
@@ -63,7 +76,7 @@ export default function ChatWindow({ contact, messages, onSendMessage }) {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [contact?.messages]);
+  }, [messages]); // Scroll when messages change
 
   if (!contact) return <WelcomeScreen />;
 
@@ -149,7 +162,12 @@ export default function ChatWindow({ contact, messages, onSendMessage }) {
                 <div className="message-meta">
                   <span className="message-time">{msg.time}</span>
                   {msg.sent && (
-                    <span className="message-ticks">{icons.tick}</span>
+                    <span className="message-ticks">
+                      {msg.status === 'read' && icons.blueDoubleTick}
+                      {msg.status === 'delivered' && icons.doubleTick}
+                      {msg.status === 'sent' && icons.singleTick}
+                      {!msg.status && icons.singleTick}
+                    </span>
                   )}
                 </div>
               </div>

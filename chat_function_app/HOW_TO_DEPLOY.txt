@@ -1,0 +1,41 @@
+================================================================
+         HOW TO DEPLOY (Window will STAY OPEN!)
+================================================================
+
+STEP 1: Go to this folder:
+   E:\cc\chart_application\chat_function_app
+
+STEP 2: Double-click this file:
+   RUN_ME.bat
+
+STEP 3: Wait 3-5 minutes
+
+STEP 4: Window will STAY OPEN and show "COMPLETE!"
+
+================================================================
+
+THE WINDOW USES: cmd /k
+This keeps the window open forever!
+
+================================================================
+
+IF WINDOW STILL CLOSES:
+
+Try this instead:
+
+1. Open Command Prompt manually
+2. Type:
+   cd E:\cc\chart_application\chat_function_app
+3. Type:
+   npm install
+4. Type:
+   az functionapp deployment source config-zip --resource-group myResourceGroup --name mychat-functions-1778393386 --src deployment.zip
+5. Window will stay open!
+
+================================================================
+
+THAT'S IT!
+
+Your backend will be deployed with blue tick feature!
+
+================================================================
