@@ -13,6 +13,7 @@ export default function Auth({ onAuthenticated }) {
 
   useEffect(() => {
     initializeMsal();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const initializeMsal = async () => {
