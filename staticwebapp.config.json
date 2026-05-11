@@ -17,7 +17,7 @@
     ".css": "text/css"
   },
   "globalHeaders": {
-    "content-security-policy": "default-src 'self' https://login.microsoftonline.com https://mychat-functions-1778393386.azurewebsites.net; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://login.microsoftonline.com https://mychat-functions-1778393386.azurewebsites.net wss://mychat-functions-1778393386.azurewebsites.net; img-src 'self' data: https:;",
+    "content-security-policy": "default-src 'self' https://login.microsoftonline.com https://mychat-functions-17783933867.azurewebsites.net; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://login.microsoftonline.com https://mychat-functions-17783933867.azurewebsites.net wss://mychat-functions-17783933867.azurewebsites.net; img-src 'self' data: https:;",
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "strict-origin-when-cross-origin"

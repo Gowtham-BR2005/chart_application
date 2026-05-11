@@ -26,7 +26,7 @@ Name: REACT_APP_AZURE_AUTHORITY
 Value: https://login.microsoftonline.com/common
 
 Name: REACT_APP_API_BASE_URL
-Value: https://mychat-functions-1778393386.azurewebsites.net/api
+Value: https://mychat-functions-17783933867.azurewebsites.net/api
 
 Name: REACT_APP_AUTH_SCOPES
 Value: openid,profile,User.Read,email
@@ -83,7 +83,7 @@ This simulates the Azure environment locally.
 ## Current Azure Configuration
 
 - **Deployment URL**: Check Azure Portal for your static web app URL
-- **Backend API**: https://mychat-functions-1778393386.azurewebsites.net/api
+- **Backend API**: https://mychat-functions-17783933867.azurewebsites.net/api
 - **Build Output**: `build/` folder
 - **Framework**: React (Create React App)
 
