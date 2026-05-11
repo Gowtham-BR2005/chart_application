@@ -43,15 +43,27 @@ app.http("sendMessage", {
       await messagesContainer.items.create(message);
       context.log("Saved to CosmosDB OK");
 
-      const channel = type === "direct" ? `user_${toUserId}` : `group_${groupId}`;
-
       const pubSubClient = new WebPubSubServiceClient(
         process.env.PUBSUB_CONNECTION,
         process.env.PUBSUB_HUB
       );
-      const hubClient = pubSubClient.group(channel);
-      await hubClient.sendToAll(JSON.stringify(message), { contentType: "application/json" });
-      context.log("PubSub broadcast OK to:", channel);
+
+      if (type === "direct") {
+        // Send to receiver's channel
+        const receiverChannel = pubSubClient.group(`user_${toUserId}`);
+        await receiverChannel.sendToAll(JSON.stringify(message), { contentType: "application/json" });
+        context.log("PubSub broadcast to receiver:", `user_${toUserId}`);
+
+        // Also send to sender's own channel so they see it in other tabs/devices
+        const senderChannel = pubSubClient.group(`user_${user.oid}`);
+        await senderChannel.sendToAll(JSON.stringify(message), { contentType: "application/json" });
+        context.log("PubSub broadcast to sender:", `user_${user.oid}`);
+      } else {
+        // Group message - send to group channel
+        const groupChannel = pubSubClient.group(`group_${groupId}`);
+        await groupChannel.sendToAll(JSON.stringify(message), { contentType: "application/json" });
+        context.log("PubSub broadcast to group:", `group_${groupId}`);
+      }
 
       return { status: 200, jsonBody: { success: true, message } };
     } catch (err) {

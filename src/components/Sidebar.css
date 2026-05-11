@@ -135,12 +135,14 @@
 .online-dot {
   width: 12px;
   height: 12px;
-  background: var(--accent);
+  background: #00a884;
   border-radius: 50%;
   position: absolute;
-  bottom: 1px;
-  right: 1px;
-  border: 2px solid var(--bg-secondary);
+  bottom: 0;
+  right: 0;
+  border: 2px solid var(--panel-bg);
+  box-shadow: 0 0 0 2px var(--panel-bg);
+  z-index: 1;
 }
 
 .contact-info {

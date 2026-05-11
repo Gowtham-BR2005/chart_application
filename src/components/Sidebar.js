@@ -27,6 +27,11 @@ const icons = {
 export default function Sidebar({ contacts, selectedContact, onSelectContact, searchQuery, onSearch, currentUser }) {
   const [searching, setSearching] = useState(false);
 
+  // Debug: Log when contacts prop updates
+  React.useEffect(() => {
+    console.log('📋 Sidebar received contacts:', contacts.map(c => ({ name: c.name, online: c.online, userId: c.userId })));
+  }, [contacts]);
+
   return (
     <div className="sidebar">
       {/* Header */}

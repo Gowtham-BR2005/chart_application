@@ -58,6 +58,7 @@ const WelcomeScreen = () => (
 
 export default function ChatWindow({ contact, messages, onSendMessage }) {
   const [input, setInput] = useState('');
+  const [showProfile, setShowProfile] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -97,9 +98,43 @@ export default function ChatWindow({ contact, messages, onSendMessage }) {
         <div className="chat-header-actions">
           <button className="icon-btn">{icons.video}</button>
           <button className="icon-btn">{icons.phone}</button>
-          <button className="icon-btn">{icons.more}</button>
+          <button className="icon-btn" onClick={() => setShowProfile(!showProfile)}>{icons.more}</button>
         </div>
       </div>
+
+      {/* Profile Sidebar */}
+      {showProfile && (
+        <div className="profile-sidebar">
+          <div className="profile-header">
+            <button className="profile-close" onClick={() => setShowProfile(false)}>✕</button>
+            <h3>Contact Info</h3>
+          </div>
+          <div className="profile-content">
+            <div className="profile-avatar-large" style={{ background: contact.avatarColor }}>
+              {contact.avatar}
+            </div>
+            <h2 className="profile-name">{contact.name}</h2>
+            <div className="profile-info-section">
+              <div className="profile-info-label">User ID</div>
+              <div className="profile-info-value">{contact.userId}</div>
+            </div>
+            <div className="profile-info-section">
+              <div className="profile-info-label">Status</div>
+              <div className="profile-info-value">
+                <span className={`status-indicator ${contact.online ? 'online' : 'offline'}`}></span>
+                {contact.online ? 'Online' : 'Offline'}
+              </div>
+            </div>
+            {contact.email && (
+              <div className="profile-info-section">
+                <div className="profile-info-label">Email</div>
+                <div className="profile-info-value">{contact.email}</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
 
       {/* Messages */}
       <div className="messages-area">

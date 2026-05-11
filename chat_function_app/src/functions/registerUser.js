@@ -9,19 +9,29 @@ app.http("registerUser", {
     try {
       const user = await verifyToken(req);
       const { username } = await req.json();
-      const { resources: existing } = await usersContainer.items.query({
-        query: "SELECT * FROM c WHERE c.username = @username",
-        parameters: [{ name: "@username", value: username }],
-      }).fetchAll();
-      if (existing.length > 0) {
-        return { status: 409, jsonBody: { error: "Username already taken" } };
-      }
+
+      context.log('Registration attempt - userId:', user.oid, 'username:', username);
+
+      // First check if user already registered (by userId)
       const { resources: alreadyRegistered } = await usersContainer.items.query({
         query: "SELECT * FROM c WHERE c.userId = @uid",
         parameters: [{ name: "@uid", value: user.oid }],
       }).fetchAll();
+
       if (alreadyRegistered.length > 0) {
+        context.log('User already exists:', alreadyRegistered[0].username);
         return { status: 200, jsonBody: { user: alreadyRegistered[0] } };
+      }
+
+      // Then check if username is taken (should rarely happen with timestamps)
+      const { resources: existing } = await usersContainer.items.query({
+        query: "SELECT * FROM c WHERE c.username = @username",
+        parameters: [{ name: "@username", value: username }],
+      }).fetchAll();
+
+      if (existing.length > 0) {
+        context.log('Username taken:', username);
+        return { status: 409, jsonBody: { error: "Username already taken", suggestion: username + '_' + Date.now() } };
       }
       const newUser = {
         id: user.oid, partitionKey: "users",

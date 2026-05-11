@@ -140,10 +140,13 @@ function App() {
           // User not registered yet, auto-register with their Microsoft name
           console.log('📝 Auto-registering new user...');
 
-          // Generate username from email or name
-          const username = auth.user.email?.split('@')[0] ||
-                          auth.user.name?.replace(/\s+/g, '_').toLowerCase() ||
-                          'user_' + Date.now();
+          // Generate username from email or name with random suffix to avoid conflicts
+          const baseUsername = auth.user.email?.split('@')[0] ||
+                               auth.user.name?.replace(/\s+/g, '_').toLowerCase() ||
+                               'user';
+
+          // Add timestamp to make it unique
+          const username = `${baseUsername}_${Date.now()}`;
 
           const registeredUser = await registerUser(auth.token, username);
 
@@ -253,14 +256,18 @@ function App() {
               const updated = prevContacts.map(c => {
                 if (c.userId === incomingData.userId) {
                   console.log(`✅ Updated ${c.name} to ${incomingData.online ? 'ONLINE' : 'OFFLINE'}`);
-                  return {
+                  console.log(`🔍 Before: c.online = ${c.online}, After: ${incomingData.online}`);
+                  const updatedContact = {
                     ...c,
                     online: incomingData.online,
                   };
+                  console.log(`🔍 Updated contact:`, updatedContact);
+                  return updatedContact;
                 }
                 return c;
               });
 
+              console.log(`📋 Full contacts list after update:`, updated.map(c => ({ name: c.name, online: c.online })));
               return updated;
             });
 
@@ -407,14 +414,20 @@ function App() {
 
         if (data && data.messages) {
           console.log(`✅ Loaded ${data.messages.length} messages`);
+          console.log('🔍 Current user ID:', auth.user.userId);
+          console.log('🔍 First message senderId:', data.messages[0]?.senderId);
 
-          setMessages(data.messages.map(m => ({
-            id: m.id,
-            text: m.content,
-            sent: m.senderId === auth.user.userId,
-            time: new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            sender: m.senderName,
-          })));
+          setMessages(data.messages.map(m => {
+            const isSent = m.senderId === auth.user.userId;
+            console.log(`📧 Message from ${m.senderId} - isSent: ${isSent} (current: ${auth.user.userId})`);
+            return {
+              id: m.id,
+              text: m.content,
+              sent: isSent,
+              time: new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              sender: m.senderName,
+            };
+          }));
         } else {
           setMessages([]);
         }
