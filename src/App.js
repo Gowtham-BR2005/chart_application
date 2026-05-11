@@ -90,7 +90,7 @@ function App() {
     };
   }, [auth]);
 
-  // Periodically check for inactive users AND refresh online status (every 30 seconds)
+  // Periodically check for inactive users AND refresh online status (every 5 seconds)
   useEffect(() => {
     if (!auth || !ENABLE_BACKEND || !registrationComplete) return;
 
@@ -127,6 +127,17 @@ function App() {
               };
             });
           });
+
+          // Also update selected contact if their status changed
+          setSelectedContact(prev => {
+            if (!prev) return prev;
+            const isOnline = onlineUsersList.some(u => u.userId === prev.userId);
+            if (prev.online !== isOnline) {
+              console.log(`🔄 Chat header updated: ${prev.name} is now ${isOnline ? 'ONLINE' : 'OFFLINE'}`);
+              return { ...prev, online: isOnline };
+            }
+            return prev;
+          });
         }
       } catch (error) {
         // Silent fail - not critical
@@ -136,8 +147,8 @@ function App() {
     // Check immediately
     checkInactiveAndRefreshOnline();
 
-    // Then check every 30 seconds
-    const interval = setInterval(checkInactiveAndRefreshOnline, 30000);
+    // Then check every 5 seconds
+    const interval = setInterval(checkInactiveAndRefreshOnline, 5000);
 
     return () => clearInterval(interval);
   }, [auth, registrationComplete]);
@@ -532,6 +543,12 @@ function App() {
 
     try {
       const user = await findUser(auth.token, query);
+
+      // Don't add yourself to contacts
+      if (user && user.userId === auth.user.userId) {
+        console.log('ℹ️ Cannot add yourself as a contact');
+        return;
+      }
 
       if (user && !contacts.find(c => c.userId === user.userId)) {
         console.log('✅ User found:', user);
