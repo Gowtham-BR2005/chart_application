@@ -90,7 +90,7 @@ export default function ChatWindow({ contact, messages, onSendMessage }) {
           <div className="chat-header-text">
             <div className="chat-contact-name">{contact.name}</div>
             <div className="chat-status">
-              {contact.online ? 'online' : contact.isGroup ? `${contact.messages.length} messages` : 'last seen recently'}
+              {contact.online ? 'online' : contact.isGroup ? 'Group chat' : 'offline'}
             </div>
           </div>
         </div>

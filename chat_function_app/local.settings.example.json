@@ -1,0 +1,18 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AZURE_AD_CLIENT_ID": "your-azure-ad-client-id",
+    "AZURE_AD_TENANT_ID": "your-azure-ad-tenant-id",
+    "COSMOS_ENDPOINT": "https://your-cosmos-account.documents.azure.com:443/",
+    "COSMOS_KEY": "your-cosmos-primary-key",
+    "COSMOS_DATABASE": "chatdb",
+    "PUBSUB_CONNECTION": "Endpoint=https://your-pubsub.webpubsub.azure.com;AccessKey=your-key;Version=1.0;",
+    "PUBSUB_HUB": "chat"
+  },
+  "Host": {
+    "CORS": "*",
+    "CORSCredentials": false
+  }
+}

@@ -61,22 +61,30 @@ export default function Auth({ onAuthenticated }) {
     // Extract user information from the JWT token
     const account = response.account || msalInstance.getAllAccounts()[0];
 
-    // Decode JWT to see claims (for debugging)
+    let userId = account.homeAccountId;
+    let userName = account.name;
+    let userEmail = account.username;
+
+    // Decode JWT to get OID (Object ID) and see claims
     if (response.idToken) {
       const tokenParts = response.idToken.split('.');
       const payload = JSON.parse(atob(tokenParts[1]));
       console.log('📜 JWT Payload:', payload);
       console.log('⏰ Token expires:', new Date(payload.exp * 1000));
+
+      // Use OID from token for backend consistency
+      userId = payload.oid || account.homeAccountId;
+      userName = payload.name || account.name;
+      userEmail = payload.preferred_username || account.username;
     }
 
     // Pass authentication data to parent
     onAuthenticated({
-      token: response.accessToken || response.idToken,
+      token: response.idToken, // Backend expects idToken, not accessToken
       user: {
-        id: account.homeAccountId,
-        name: account.name,
-        email: account.username,
-        account: account
+        userId: userId,
+        name: userName,
+        email: userEmail,
       }
     });
   };

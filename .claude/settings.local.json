@@ -12,7 +12,25 @@
       "Bash(git commit *)",
       "Bash(git pull *)",
       "Bash(git rebase *)",
-      "Bash(git reset *)"
+      "Bash(git reset *)",
+      "Bash(git cherry-pick *)",
+      "Bash(git push *)",
+      "Bash(gh pr *)",
+      "Bash(node *)",
+      "Bash(curl -s http://localhost:7071/api/negotiate)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(findstr \":7071\")",
+      "Bash(findstr \":3000\")",
+      "Bash(findstr \":7071 \")",
+      "Bash(findstr \":3000 \")",
+      "Bash(curl -s http://localhost:7071)",
+      "Bash(findstr \"LISTENING\")",
+      "Bash(pkill -f \"node.*func\")",
+      "Bash(pkill -f \"react-scripts\")",
+      "Bash(start cmd *)",
+      "Bash(curl *)",
+      "Bash(git rm *)",
+      "Bash(rm -rf /e/cc/chart_application/chat_function_app/.git)"
     ]
   }
 }
