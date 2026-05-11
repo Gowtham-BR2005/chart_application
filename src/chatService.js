@@ -3,24 +3,6 @@ import { API_BASE } from './authConfig';
 let socket = null;
 let heartbeatInterval = null;
 
-// Helper function to handle fetch errors
-async function safeFetch(url, options = {}) {
-  try {
-    const res = await fetch(url, options);
-
-    // Check if response is ok
-    if (!res.ok) {
-      console.warn(`API call failed: ${url}`, res.status);
-      return { error: true, status: res.status };
-    }
-
-    return await res.json();
-  } catch (error) {
-    console.error(`Network error calling ${url}:`, error);
-    return { error: true, message: error.message };
-  }
-}
-
 export async function registerUser(token, username) {
   try {
     console.log('📝 Registering user with username:', username);

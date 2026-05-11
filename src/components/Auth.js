@@ -118,14 +118,6 @@ export default function Auth({ onAuthenticated }) {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await msalInstance.logoutRedirect();
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
   if (loading) {
     return (
       <div className="auth-root">
