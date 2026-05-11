@@ -24,16 +24,16 @@ const icons = {
   ),
 };
 
-export default function Sidebar({ contacts, selectedContact, onSelectContact, searchQuery, onSearch }) {
+export default function Sidebar({ contacts, selectedContact, onSelectContact, searchQuery, onSearch, currentUser }) {
   const [searching, setSearching] = useState(false);
 
   return (
     <div className="sidebar">
       {/* Header */}
       <div className="sidebar-header">
-        <div className="my-avatar">
-          <span>Me</span>
-        </div>
+       <div className="my-avatar">
+        <span>{currentUser?.username?.slice(0,2).toUpperCase() || 'Me'}</span>
+      </div>
         <div className="header-actions">
           <button className="icon-btn" title="New Chat">{icons.newChat}</button>
           <button className="icon-btn" title="Menu">{icons.menu}</button>
