@@ -56,7 +56,7 @@ const WelcomeScreen = () => (
   </div>
 );
 
-export default function ChatWindow({ contact, onSendMessage }) {
+export default function ChatWindow({ contact, messages, onSendMessage }) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
 
@@ -104,7 +104,7 @@ export default function ChatWindow({ contact, onSendMessage }) {
       {/* Messages */}
       <div className="messages-area">
         <div className="messages-inner">
-          {contact.messages.map((msg, i) => (
+          {(messages || []).map((msg, i) => (
             <div key={msg.id} className={`message-row ${msg.sent ? 'sent' : 'received'}`}>
               <div className={`message-bubble ${msg.sent ? 'bubble-sent' : 'bubble-received'}`}>
                 {msg.sender && (

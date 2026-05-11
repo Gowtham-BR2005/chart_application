@@ -26,6 +26,9 @@ export const loginRequest = {
   ]
 };
 
+// Backend API URL (optional - only needed if using backend)
+export const API_BASE = "https://mychat-functions-1778393386.azurewebsites.net/api";
+
 // Token claims to extract from JWT
 export const tokenClaims = {
   idToken: [
