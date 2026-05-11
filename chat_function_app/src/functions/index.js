@@ -13,3 +13,5 @@ require("./getOnlineUsers");
 require("./checkInactiveUsers");
 require("./heartbeat");
 require("./updateUsername");
+require("./markAsRead");
+require("./sendReadReceipt");
