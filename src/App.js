@@ -90,13 +90,14 @@ function App() {
     };
   }, [auth]);
 
-  // Periodically check for inactive users AND refresh online status (every 5 seconds)
+  // Periodically check for inactive users AND refresh online status (every 10 seconds)
+  // This catches users who close the app and marks them offline within 30-40 seconds
   useEffect(() => {
     if (!auth || !ENABLE_BACKEND || !registrationComplete) return;
 
     const checkInactiveAndRefreshOnline = async () => {
       try {
-        // Check for inactive users
+        // Check for inactive users (users who haven't sent heartbeat in 30s)
         const res = await fetch(`${API_BASE}/presence/check-inactive`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${auth.token}` }
@@ -105,11 +106,11 @@ function App() {
         if (res.ok) {
           const data = await res.json();
           if (data.marked > 0) {
-            console.log(`🔴 Marked ${data.marked} inactive users as offline`);
+            console.log(`🔴 Marked ${data.marked} users offline (closed app or lost connection)`);
           }
         }
 
-        // Refresh online users list
+        // Refresh online users list to update UI
         const onlineUsersList = await getOnlineUsers(auth.token);
         if (onlineUsersList) {
           setContacts(prevContacts => {
@@ -118,7 +119,7 @@ function App() {
               const isOnline = onlineUsersList.some(u => u.userId === c.userId);
 
               if (wasOnline !== isOnline) {
-                console.log(`🔄 Status changed: ${c.name} is now ${isOnline ? 'ONLINE' : 'OFFLINE'}`);
+                console.log(`🔄 ${c.name} is now ${isOnline ? '🟢 ONLINE' : '⚫ OFFLINE'} (${isOnline ? 'app open' : 'app closed'})`);
               }
 
               return {
@@ -128,12 +129,12 @@ function App() {
             });
           });
 
-          // Also update selected contact if their status changed
+          // Also update selected contact's status in chat header
           setSelectedContact(prev => {
             if (!prev) return prev;
             const isOnline = onlineUsersList.some(u => u.userId === prev.userId);
             if (prev.online !== isOnline) {
-              console.log(`🔄 Chat header updated: ${prev.name} is now ${isOnline ? 'ONLINE' : 'OFFLINE'}`);
+              console.log(`🔄 Chat header: ${prev.name} is ${isOnline ? '🟢 online' : '⚫ offline'}`);
               return { ...prev, online: isOnline };
             }
             return prev;
@@ -144,11 +145,11 @@ function App() {
       }
     };
 
-    // Check immediately
+    // Check immediately on mount
     checkInactiveAndRefreshOnline();
 
-    // Then check every 5 seconds
-    const interval = setInterval(checkInactiveAndRefreshOnline, 5000);
+    // Then check every 10 seconds
+    const interval = setInterval(checkInactiveAndRefreshOnline, 10000);
 
     return () => clearInterval(interval);
   }, [auth, registrationComplete]);

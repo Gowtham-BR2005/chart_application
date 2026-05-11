@@ -147,7 +147,8 @@ export async function connectWebSocket(token, onMessage, autoReconnect = false) 
         console.error('Failed to broadcast online status:', error);
       }
 
-      // Send heartbeat every 5 seconds to keep connection alive and update online status
+      // Send heartbeat every 15 seconds to keep connection alive
+      // This proves the user is still active (tab open)
       heartbeatInterval = setInterval(async () => {
         if (socket && socket.readyState === WebSocket.OPEN) {
           // Send WebSocket heartbeat
@@ -162,12 +163,15 @@ export async function connectWebSocket(token, onMessage, autoReconnect = false) 
                 'Content-Type': 'application/json'
               }
             });
-            console.log('💓 Heartbeat sent (WebSocket + Backend)');
+            console.log('💓 Heartbeat sent - You are still ONLINE');
           } catch (error) {
-            console.log('💓 Heartbeat sent (WebSocket only)');
+            console.log('💓 WebSocket heartbeat sent');
           }
+        } else {
+          console.log('⚠️ WebSocket not open, stopping heartbeat');
+          clearInterval(heartbeatInterval);
         }
-      }, 5000);
+      }, 15000);
     };
 
     socket.onmessage = (event) => {

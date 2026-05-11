@@ -3,7 +3,8 @@ const { usersContainer } = require("./utils/cosmosClient");
 const { WebPubSubServiceClient } = require("@azure/web-pubsub");
 
 // This function can be called periodically to check for inactive users
-// Users who haven't updated their status in 10+ seconds are marked offline
+// Users who haven't sent heartbeat in 30+ seconds are marked offline
+// This ensures users go offline when they close the tab/browser
 app.http("checkInactiveUsers", {
   methods: ["POST"],
   authLevel: "anonymous",
@@ -11,18 +12,19 @@ app.http("checkInactiveUsers", {
   handler: async (req, context) => {
     try {
       const now = new Date();
-      const tenSecondsAgo = new Date(now.getTime() - 10000);
+      const thirtySecondsAgo = new Date(now.getTime() - 30000);
 
-      context.log('Checking for inactive users...');
+      context.log('Checking for inactive users (30s threshold)...');
 
-      // Find users marked online but haven't updated in 10+ seconds
+      // Find users marked online but haven't sent heartbeat in 30+ seconds
+      // This means they closed the tab or lost connection
       const { resources: staleUsers } = await usersContainer.items.query({
         query: `
           SELECT * FROM c
           WHERE c.online = true
           AND c.lastSeen < @threshold
         `,
-        parameters: [{ name: "@threshold", value: tenSecondsAgo.toISOString() }],
+        parameters: [{ name: "@threshold", value: thirtySecondsAgo.toISOString() }],
       }).fetchAll();
 
       if (staleUsers.length === 0) {
