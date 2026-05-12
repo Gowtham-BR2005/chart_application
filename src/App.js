@@ -7,7 +7,7 @@ import { API_BASE } from './authConfig';
 import './App.css';
 
 // Feature flag: Set to true to enable backend connection
-const ENABLE_BACKEND = false;
+const ENABLE_BACKEND = true;
 
 // Demo contacts for testing (used when backend is disabled)
 const demoContacts = [

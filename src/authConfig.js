@@ -34,7 +34,7 @@ export const loginRequest = {
 };
 
 // Backend API URL (optional - only needed if using backend)
-export const API_BASE = process.env.REACT_APP_API_BASE_URL || "https://mychat-functions-17783933867.azurewebsites.net/api";
+export const API_BASE = process.env.REACT_APP_API_BASE_URL || "https://mychat-functions-1778393386.azurewebsites.net/api";
 
 // Token claims to extract from JWT
 export const tokenClaims = {
