@@ -213,3 +213,11 @@
   color: var(--text-muted);
   font-size: 14px;
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    min-width: 100%;
+  }
+}

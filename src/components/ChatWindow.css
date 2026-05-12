@@ -391,3 +391,36 @@
 .status-indicator.offline {
   background: #8696a0;
 }
+
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .chat-window {
+    width: 100%;
+  }
+
+  .chat-header {
+    padding: 10px 12px;
+  }
+
+  .chat-header-info h3 {
+    font-size: 16px;
+  }
+
+  .message-input-container {
+    padding: 8px 12px;
+  }
+
+  .message-input {
+    font-size: 15px;
+    padding: 8px 12px;
+  }
+
+  .welcome-content h2 {
+    font-size: 28px;
+  }
+
+  .welcome-content p {
+    font-size: 14px;
+  }
+}
